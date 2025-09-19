@@ -1,0 +1,130 @@
+﻿@inherits LayoutComponentBase
+
+<div class="main-container">
+    <div class="content-card">
+        @Body
+    </div>
+</div>
+
+<!-- Move the style block outside of Razor code to avoid C# parsing errors -->
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        font-family: 'Nunito', sans-serif;
+        -webkit-font-smoothing:antialiased;
+    }
+
+    /* Soothing gradient background */
+    .main-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #eef6ff 0%, #f2e9ff 50%, #fffaf0 100%);
+    }
+
+    /* Center card */
+    .content-card {
+        width: 100%;
+        max-width: 760px;
+        padding: 2rem;
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(250,250,252,0.9));
+        box-shadow: 0 10px 30px rgba(16,24,40,0.08);
+        backdrop-filter: blur(6px);
+    }
+
+    h3 {
+        margin: 0 0 6px 0;
+        text-align: center;
+        color: #1f2937;
+        font-size: 1.35rem;
+    }
+
+    .text-muted {
+        text-align: center;
+        color: #6b7280;
+        margin-bottom: 1rem;
+    }
+
+    /* Two-box responsive form */
+    .form-grid {
+        display: flex;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .box {
+        flex: 1;
+        background: linear-gradient(180deg,#ffffff,#fbfdff);
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 6px 18px rgba(16,24,40,0.04);
+    }
+
+    .label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.35rem;
+        display: block;
+    }
+
+    .input {
+        width: 100%;
+        padding: 0.56rem 0.75rem;
+        border-radius: 8px;
+        border: 1px solid #e6e9ef;
+        font-size: 1rem;
+        background: #fff;
+        box-sizing: border-box;
+    }
+
+    .small-note { font-size: 0.85rem; color:#6b7280; margin-top:0.25rem; }
+
+    /* Buttons — even widths, spaced */
+    .button-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 1.2rem;
+    }
+    .button-row button {
+        flex: 1;
+        padding: 0.6rem 0.8rem;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+    }
+    .btn-primary {
+        background: linear-gradient(90deg,#5863f8,#3fb1ff);
+        color: white;
+        box-shadow: 0 6px 18px rgba(59,92,240,0.14);
+    }
+    .btn-outline {
+        background: white;
+        border: 1px solid #e6e9ef;
+        color: #374151;
+    }
+
+    /* Table */
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1.25rem;
+        font-size: 0.95rem;
+    }
+    .table th, .table td {
+        padding: 0.65rem 0.5rem;
+        border-bottom: 1px solid #eef1f7;
+        text-align: center;
+    }
+    .table thead th { color: #4b5563; font-weight: 700; }
+
+    /* Row colors */
+    .optimal-row { background: linear-gradient(90deg,#e6fff0,#f0fff7); }
+    .recommended-row { background: #f7fffb; }
+    .too-short-row { background: linear-gradient(90deg,#fff9e6,#fff6d6); }
+    .too-long-row { background: linear-gradient(90deg,#fff6f6,#ffecec); }
+
+</style>

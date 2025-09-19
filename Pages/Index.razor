@@ -1,0 +1,167 @@
+@page "/"
+@using System.Globalization
+
+<PageTitle>Slumber</PageTitle>
+
+<h1 style="display:flex; justify-content: center">Slumber</h1>
+
+<div class="form-grid">
+    <div class="box">
+        <label class="label">Age (years)</label>
+        <input class="input" type="number" min="0" max="120" @bind="Age" />
+
+        <div style="height:0.5rem"></div>
+
+        <div class="small-note">Age gives better estimates.</div>
+    </div>
+
+    <div class="box">
+        <label class="label">Sleep time (HH:mm)</label>
+        <input class="input" type="time" @bind="SleepTime" />
+
+        <div style="height:0.6rem"></div>
+
+        <label class="label">Sleep latency (minutes)</label>
+        <input class="input" type="number" min="0" step="1" @bind="LatencyMinutes" />
+        <div class="small-note">Default 15 minutes (time to fall asleep).</div>
+    </div>
+</div>
+
+<div class="button-row" style="justify-content:center; margin-top:1.1rem;">
+    <button class="btn-primary" @onclick="Calculate">Calculate</button>
+    <button class="btn-outline" @onclick="Reset">Reset</button>
+</div>
+
+@if (Results?.Any() == true)
+{
+    <table class="table" role="table" aria-label="Recommendations">
+        <thead>
+            <tr>
+                <th>Wake time</th>
+                <th>Total sleep</th>
+                <th>Cycles</th>
+                <th>REM</th>
+                <th>Deep</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Results.Count; i++)
+            {
+                var r = Results[i];
+                var rowClass =
+                    i == 0 ? "optimal-row"
+                    : r.Group == 0 ? "recommended-row"
+                    : r.Group == 1 ? "too-short-row"
+                    : "too-long-row";
+
+                <tr class="@rowClass">
+                    <td>@r.WakeTime.ToString("HH:mm")</td>
+                    <td>@FormatMinutes(r.TotalMinutes)</td>
+                    <td>@r.Cycles</td>
+                    <td>@FormatMinutes((int)r.RemMinutes)</td>
+                    <td>@FormatMinutes((int)r.DeepMinutes)</td>
+                    <td>@r.Note</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private int Age { get; set; } = 30;
+    private TimeOnly? SleepTime { get; set; } = TimeOnly.FromDateTime(DateTime.Now);
+    private int LatencyMinutes { get; set; } = 15;
+
+    private List<ResultRow> Results { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        SleepTime = TimeOnly.FromDateTime(DateTime.Now);
+    }
+
+    private void Reset()
+    {
+        Age = 30;
+        LatencyMinutes = 15;
+        SleepTime = TimeOnly.FromDateTime(DateTime.Now);
+        Results.Clear();
+    }
+
+    private void Calculate()
+    {
+        Results.Clear();
+
+        if (SleepTime == null)
+            return;
+
+        var p = SleepParameters.GetForAge(Age);
+        var cycle = p.CycleMinutes;
+        var midPoint = (p.RecommendedMinHours + p.RecommendedMaxHours) / 2.0;
+
+        for (int n = 2; n <= 10; n++)
+        {
+            var totalMinutes = LatencyMinutes + n * cycle;
+            var totalHours = totalMinutes / 60.0;
+
+            var today = DateTime.Today;
+            var sleepDateTime = today.Add(SleepTime.Value.ToTimeSpan());
+            var wakeDateTime = sleepDateTime.AddMinutes(totalMinutes);
+
+            var rem = totalMinutes * p.RemPct;
+            var deep = totalMinutes * p.DeepPct;
+
+            int group; // 0 = optimal range, 1 = too short, 2 = too long
+            if (totalHours >= p.RecommendedMinHours && totalHours <= p.RecommendedMaxHours)
+                group = 0;
+            else if (totalHours < p.RecommendedMinHours)
+                group = 1;
+            else
+                group = 2;
+
+            var distanceToMid = Math.Abs(totalHours - midPoint);
+
+            var note = group == 0 ? "Optimal range"
+                     : (group == 1 ? "Too short" : "Too long");
+
+            Results.Add(new ResultRow
+            {
+                WakeTime = wakeDateTime,
+                TotalMinutes = totalMinutes,
+                Cycles = n,
+                RemMinutes = rem,
+                DeepMinutes = deep,
+                Group = group,
+                DistanceToMid = distanceToMid,
+                Note = note
+            });
+        }
+
+        // Sort: group order (optimal=0, too-short=1, too-long=2).
+        // Within optimal: pick closest to midpoint first (distance ascending).
+        // Within others: sort by totalMinutes ascending (least -> max).
+        Results = Results
+            .OrderBy(r => r.Group)
+            .ThenBy(r => r.Group == 0 ? r.DistanceToMid : r.TotalMinutes)
+            .ToList();
+    }
+
+    private static string FormatMinutes(int minutes)
+    {
+        var h = minutes / 60;
+        var m = minutes % 60;
+        return h > 0 ? $"{h}h {m}m" : $"{m}m";
+    }
+
+    private class ResultRow
+    {
+        public DateTime WakeTime { get; set; }
+        public int TotalMinutes { get; set; }
+        public int Cycles { get; set; }
+        public double RemMinutes { get; set; }
+        public double DeepMinutes { get; set; }
+        public int Group { get; set; } // 0 optimal, 1 too-short, 2 too-long
+        public double DistanceToMid { get; set; }
+        public string? Note { get; set; }
+    }
+}
